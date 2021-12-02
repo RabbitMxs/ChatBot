@@ -12,13 +12,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      /*theme: ThemeData(
-        brightness: Brightness.dark,
-        primarySwatch: Colors.blue,
-      ),*/
+      title: 'ChatBot',
       debugShowCheckedModeBanner: false,
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'ChatBot Home Page'),
     );
   }
 }
@@ -33,24 +29,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  void response(query) async {
-    AuthGoogle authGoogle =
-        await AuthGoogle(fileJson: "assets/service.json").build();
-    Dialogflow dialogflow =
-        Dialogflow(authGoogle: authGoogle, language: Language.english);
-    AIResponse aiResponse = await dialogflow.detectIntent(query);
-    setState(() {
-      messsages.insert(0, {
-        "data": 0,
-        "message": aiResponse.getListMessage()[0]["text"]["text"][0].toString()
-      });
-    });
-
-    print(aiResponse.getListMessage()[0]["text"]["text"][0].toString());
-  }
-
-  final messageInsert = TextEditingController();
-  List<Map> messsages = List();
+  final mensajeController = TextEditingController();
+  List<Map> mensajes = List();
 
   @override
   Widget build(BuildContext context) {
@@ -64,15 +44,15 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           children: <Widget>[
             Flexible(
-                child: ListView.builder(
-                    reverse: true,
-                    itemCount: messsages.length,
-                    itemBuilder: (context, index) => chat(
-                        messsages[index]["message"].toString(),
-                        messsages[index]["data"]))),
-            SizedBox(
-              height: 20,
+              child: ListView.builder(
+                reverse: true,
+                itemCount: mensajes.length,
+                itemBuilder: (context, index) => chat(
+                    mensajes[index]["mensaje"].toString(),
+                    mensajes[index]["data"]),
+              ),
             ),
+            SizedBox(height: 20),
             Divider(
               height: 5.0,
               color: Colors.blue,
@@ -87,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   padding: EdgeInsets.only(left: 15),
                   child: TextFormField(
-                    controller: messageInsert,
+                    controller: mensajeController,
                     decoration: InputDecoration(
                       hintText: "Escribre un mensaje aquí",
                       hintStyle: TextStyle(color: Colors.black26),
@@ -98,7 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       disabledBorder: InputBorder.none,
                     ),
                     style: TextStyle(fontSize: 16, color: Colors.black),
-                    onChanged: (value) {},
+                    //onChanged: (value) {},
                   ),
                 ),
                 trailing: IconButton(
@@ -108,15 +88,15 @@ class _MyHomePageState extends State<MyHomePage> {
                       color: Colors.blue,
                     ),
                     onPressed: () {
-                      if (messageInsert.text.isEmpty) {
-                        print("empty message");
+                      if (mensajeController.text.isEmpty) {
+                        print("Mensaje vacio");
                       } else {
                         setState(() {
-                          messsages.insert(
-                              0, {"data": 1, "message": messageInsert.text});
+                          mensajes.insert(0,
+                              {"data": 1, "mensaje": mensajeController.text});
                         });
-                        response(messageInsert.text);
-                        messageInsert.clear();
+                        respuestaDialogFlow(mensajeController.text);
+                        mensajeController.clear();
                       }
                       FocusScopeNode currentFocus = FocusScope.of(context);
                       if (!currentFocus.hasPrimaryFocus) {
@@ -125,22 +105,33 @@ class _MyHomePageState extends State<MyHomePage> {
                     }),
               ),
             ),
-            SizedBox(
-              height: 15.0,
-            )
+            SizedBox(height: 15.0)
           ],
         ),
       ),
     );
   }
 
-  //for better one i have use the bubble package check out the pubspec.yaml
+  void respuestaDialogFlow(consulta) async {
+    AuthGoogle authGoogle =
+        await AuthGoogle(fileJson: "assets/service.json").build();
+    Dialogflow dialogflow =
+        Dialogflow(authGoogle: authGoogle, language: Language.spanish);
+    AIResponse aiResponse = await dialogflow.detectIntent(consulta);
+    setState(() {
+      mensajes.insert(0, {
+        "data": 0,
+        "mensaje": aiResponse.getListMessage()[0]["text"]["text"][0].toString()
+      });
+    });
+  }
 
-  Widget chat(String message, int data) {
+  Widget chat(String mensaje, int data) {
     return Container(
       padding: EdgeInsets.only(left: 20, right: 20),
       child: Row(
         mainAxisAlignment:
+            // data = 1 usuario       data = 0 Bot
             data == 1 ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           data == 0
@@ -155,33 +146,33 @@ class _MyHomePageState extends State<MyHomePage> {
           Padding(
             padding: EdgeInsets.all(10.0),
             child: Bubble(
-                radius: Radius.circular(15.0),
-                color: data == 0
-                    ? Color.fromRGBO(23, 157, 139, 1)
-                    : Colors.orangeAccent,
-                elevation: 0.0,
-                child: Padding(
-                  padding: EdgeInsets.all(2.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      SizedBox(
-                        width: 10.0,
-                      ),
-                      Flexible(
-                          child: Container(
+              radius: Radius.circular(15.0),
+              color: data == 0
+                  ? Color.fromRGBO(23, 157, 139, 1)
+                  : Colors.orangeAccent,
+              elevation: 0.0,
+              child: Padding(
+                padding: EdgeInsets.all(2.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    SizedBox(width: 10.0),
+                    Flexible(
+                      child: Container(
                         constraints: BoxConstraints(maxWidth: 200),
                         child: Text(
-                          message,
+                          mensaje,
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ))
-                    ],
-                  ),
-                )),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
           data == 1
               ? Container(
